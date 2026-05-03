@@ -43,13 +43,13 @@
         .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px var(--cyan-glow); }
         .btn-secondary { background: transparent; border: 2px solid var(--platform-border); color: var(--text); padding: 12px; }
 
-        /* QR SCAN OPTIMIZATION */
+        /* DYNAMIC QR SYSTEM FOR YOUR URL */
         #qr-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 200; justify-content: center; align-items: center; flex-direction: column; gap: 30px; pointer-events: auto;}
         #qr-modal.active { display: flex; }
         
         .qr-frame { background: #ffffff; padding: 20px; border-radius: 12px; box-shadow: 0 0 40px rgba(255,255,255,0.3); transition: 0.3s; }
         
-        /* Ensures pixel clarity for scanners */
+        /* Mobile Scale */
         .qr-frame img { 
             display: block; 
             width: 280px; 
@@ -57,6 +57,7 @@
             image-rendering: pixelated; 
         }
 
+        /* Desktop "Giant" Scale */
         @media (min-width: 1024px) {
             .qr-frame img { width: 550px; height: 550px; }
             .qr-frame { padding: 35px; }
@@ -128,9 +129,9 @@
 
 <div id="qr-modal">
     <div class="qr-frame">
-        <img src="https://storage3.me-qr.com/qr/343222737.png?v=1777820178" alt="Scan to Play">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=https://ibrahimrehan2020-rgb.github.io/InnovativeLearningGame/" alt="Scan to Play">
     </div>
-    <p style="color: var(--cyan); font-weight: bold;">SCAN TO PLAY</p>
+    <p style="color: var(--cyan); font-weight: bold; letter-spacing: 2px;">SCAN TO CONNECT SYSTEM</p>
     <button class="btn" style="max-width: 200px;" onclick="toggleQR(false)">Back</button>
 </div>
 
