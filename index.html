@@ -2,75 +2,86 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>BRAIN-STORM</title>
     <style>
         :root {
             --bg-void: #000000; 
-            --card-bg: rgba(13, 17, 23, 0.95);
+            --card-bg: rgba(13, 17, 23, 0.98);
             --cyan: #00f2ff;
-            --cyan-dim: rgba(0, 242, 255, 0.1);
             --cyan-glow: rgba(0, 242, 255, 0.6);
             --text: #e6edf3;
             --danger: #ff4d4d;
-            --success: #00ff88;
-            --platform: #161b22;
             --platform-border: #30363d;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; user-select: none; }
-        body { background: var(--bg-void); color: var(--text); overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; touch-action: none; }
+        /* STRICT ANTI-ZOOM AND SCROLL LOCK */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; user-select: none; touch-action: none; }
+        
+        body { 
+            background: var(--bg-void); 
+            color: var(--text); 
+            overflow: hidden; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            width: 100vw;
+            position: fixed;
+        }
 
-        #canvas-container { position: relative; width: 100vw; height: 100vh; overflow: hidden; background: #000; }
+        #canvas-container { position: relative; width: 100vw; height: 100vh; background: #000; }
         canvas { display: block; position: absolute; top: 0; left: 0; }
         #bgCanvas { z-index: 1; }
         #gameCanvas { z-index: 2; }
 
         #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: flex; justify-content: center; align-items: center; z-index: 100; }
         
-        .screen { pointer-events: auto; display: none; flex-direction: column; gap: 15px; background: var(--card-bg); border: 1px solid var(--platform-border); border-radius: 16px; padding: 40px; box-shadow: 0 10px 50px rgba(0,0,0,0.9); width: 90%; max-width: 500px; backdrop-filter: blur(8px); }
-        .screen.active { display: flex; animation: slideIn 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
-
-        @keyframes slideIn {
-            from { transform: translateY(30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        .screen { 
+            pointer-events: auto; 
+            display: none; 
+            flex-direction: column; 
+            gap: 12px; 
+            background: var(--card-bg); 
+            border: 1px solid var(--platform-border); 
+            border-radius: 12px; 
+            padding: 25px; 
+            width: 90%; 
+            max-width: 380px; 
+            backdrop-filter: blur(15px);
+            text-align: center;
         }
+        .screen.active { display: flex; }
 
-        h1 { color: var(--cyan); text-align: center; letter-spacing: 4px; text-shadow: 0 0 15px var(--cyan-glow); font-size: 2.5rem; margin-bottom: 5px; }
-        input { width: 100%; padding: 15px; background: rgba(0, 0, 0, 0.8); border: 1px solid var(--platform-border); border-radius: 8px; color: white; font-size: 1.1rem; outline: none; text-align: center; }
+        h1 { color: var(--cyan); letter-spacing: 2px; text-shadow: 0 0 10px var(--cyan-glow); font-size: 1.8rem; margin-bottom: 5px; }
         
-        .btn { background: var(--cyan); color: #000; border: none; padding: 15px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; font-size: 1rem; width: 100%; letter-spacing: 1px; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px var(--cyan-glow); }
-        .btn-secondary { background: transparent; border: 2px solid var(--platform-border); color: var(--text); padding: 12px; }
-
-        /* QR MODAL SYSTEM */
-        #qr-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 200; justify-content: center; align-items: center; flex-direction: column; gap: 30px; pointer-events: auto;}
-        #qr-modal.active { display: flex; }
-        
-        .qr-frame { background: #ffffff; padding: 15px; border-radius: 12px; box-shadow: 0 0 40px rgba(255,255,255,0.3); }
-        .qr-frame img { display: block; width: 280px; height: 280px; image-rendering: pixelated; }
-
-        @media (min-width: 1024px) {
-            .qr-frame img { width: 500px; height: 500px; }
-            .qr-frame { padding: 25px; }
+        input { 
+            width: 100%; 
+            padding: 14px; 
+            background: #000; 
+            border: 1px solid var(--platform-border); 
+            border-radius: 8px; 
+            color: white; 
+            font-size: 16px; /* Critical: 16px prevents iOS auto-zoom */
+            outline: none; 
+            text-align: center; 
+            touch-action: manipulation;
         }
+        
+        .btn { background: var(--cyan); color: #000; border: none; padding: 14px; border-radius: 8px; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; width: 100%; cursor: pointer; }
+        
+        #hud { position: absolute; top: 15px; left: 10px; right: 10px; display: none; justify-content: space-between; font-size: 0.65rem; z-index: 10; pointer-events: none; }
+        #hud span { background: var(--card-bg); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--platform-border); color: #fff; }
 
-        #hud { position: absolute; top: 20px; left: 20px; right: 20px; display: none; justify-content: space-between; font-weight: bold; z-index: 10; pointer-events: none; }
-        #hud span { background: var(--card-bg); padding: 10px 20px; border-radius: 8px; border: 1px solid var(--platform-border); }
+        .opt-btn { background: rgba(33, 38, 45, 0.85); border: 1px solid var(--platform-border); color: white; padding: 15px; border-radius: 8px; text-align: left; font-size: 0.9rem; width: 100%; margin-bottom: 8px; touch-action: manipulation; }
 
-        .fs-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 300; background: rgba(0,0,0,0.5); border: 1px solid var(--cyan); color: var(--cyan); padding: 10px; border-radius: 8px; cursor: pointer; pointer-events: auto; }
-
-        .opt-btn { background: rgba(33, 38, 45, 0.7); border: 2px solid var(--platform-border); color: white; padding: 18px; border-radius: 8px; text-align: left; cursor: pointer; transition: 0.3s; width: 100%; margin-bottom: 8px; }
-        .opt-btn:hover { border-color: var(--cyan); background: var(--cyan-dim); }
-
-        #mobile-controls { position: absolute; bottom: 30px; left: 20px; right: 20px; display: none; justify-content: space-between; z-index: 50; pointer-events: none; }
-        .ctrl-btn { width: 70px; height: 70px; background: rgba(0,242,255,0.05); border: 2px solid var(--cyan); border-radius: 50%; color: var(--cyan); display: flex; justify-content: center; align-items: center; pointer-events: auto; font-size: 1.8rem; }
-        @media (max-width: 1024px) { #mobile-controls { display: flex; } }
+        #mobile-controls { position: absolute; bottom: 30px; left: 15px; right: 15px; display: flex; justify-content: space-between; z-index: 50; pointer-events: none; }
+        .ctrl-btn { width: 75px; height: 75px; background: rgba(0,242,255,0.1); border: 2px solid var(--cyan); border-radius: 50%; color: var(--cyan); display: flex; justify-content: center; align-items: center; font-size: 1.8rem; pointer-events: auto; }
+        
+        @media (min-width: 1024px) { #mobile-controls { display: none; } }
     </style>
 </head>
 <body>
-
-<button class="fs-toggle" onclick="toggleFS()">⛶ FULLSCREEN</button>
 
 <div id="canvas-container">
     <canvas id="bgCanvas"></canvas>
@@ -78,7 +89,7 @@
 </div>
 
 <div id="hud">
-    <span>USER: <span id="hud-user" style="color:var(--cyan)"></span></span>
+    <span>PLAYER: <span id="hud-user" style="color:var(--cyan)"></span></span>
     <span>LIVES: <span id="hud-lives" style="color:var(--danger)">3</span></span>
     <span>SECTOR: <span id="hud-level" style="color:var(--cyan)">1</span></span>
 </div>
@@ -86,97 +97,270 @@
 <div id="ui-layer">
     <div id="menu-screen" class="screen active">
         <h1>BRAIN-STORM</h1>
-        <p id="hs-text" style="text-align: center; color: #8b949e; font-weight: bold;"></p>
-        <input type="text" id="username" placeholder="Enter Alias..." maxlength="12">
-        <button class="btn" onclick="startGame()">Initialize Mission</button>
-        <button class="btn btn-secondary" onclick="showScreen('how-to')" style="margin-top:10px">How to Play</button>
-        <button class="btn btn-secondary" onclick="showScreen('credits')">Credits</button>
-        <button class="btn btn-secondary" onclick="toggleQR(true)">Share System (QR)</button>
-    </div>
-
-    <div id="how-to" class="screen">
-        <h2>MISSION GUIDE</h2>
-        <p>• Move: <span style="color:var(--cyan)">Arrows / WASD</span></p>
-        <p>• Jump: <span style="color:var(--cyan)">Up / Space</span></p>
-        <p>• <span style="color:var(--success)">Flux Beacons</span>: SPINNING pyramids are safe zones.</p>
-        <button class="btn" onclick="showScreen('menu-screen')">Back</button>
-    </div>
-
-    <div id="credits" class="screen">
-        <h2>CREDITS</h2>
-        <div style="text-align: center;">
-            <p style="color:#8b949e">Lead Developer</p>
-            <p style="font-size: 1.5rem; font-weight: bold; color: var(--cyan); margin: 10px 0;">Muhammad Rehan Shaukat</p>
-            <p>Lecturer in UTAS</p>
-            <button class="btn btn-secondary" onclick="showScreen('menu-screen')" style="margin-top:20px">Back</button>
-        </div>
+        <p id="hs-text" style="color: #8b949e; font-size: 0.75rem; margin-bottom: 10px;"></p>
+        <input type="text" id="username" placeholder="Enter Alias..." maxlength="12" autocomplete="off">
+        <button class="btn" onclick="startGame()">Start Game</button>
+        <div style="margin-top: 10px; font-size: 0.7rem; color: #444;">No-Repeat MCQ Engine Active</div>
     </div>
 
     <div id="quiz-screen" class="screen">
-        <h2 style="color: var(--cyan); text-align: center;">TERMINAL ACCESS</h2>
-        <p id="q-text" style="text-align: center; margin: 15px 0; font-size: 1.3rem; border-left: 4px solid var(--cyan); padding-left: 10px;"></p>
+        <h2 style="color: var(--cyan); font-size: 1.1rem; margin-bottom: 10px;">TERMINAL CHALLENGE</h2>
+        <p id="q-text" style="margin-bottom: 15px; font-size: 0.95rem; line-height: 1.4; text-align: left; color: #fff;"></p>
         <div id="opt-box"></div>
     </div>
 </div>
 
-<div id="qr-modal">
-    <div class="qr-frame">
-        <img src="https://api.qrserver.com/v1/create-qr-code/?size=600x600&ecc=H&margin=1&data=https%3A%2F%2Fibrahimrehan2020-rgb.github.io%2FInnovativeLearningGame%2F" alt="Scan to Play">
-    </div>
-    <p style="color: var(--cyan); font-weight: bold; letter-spacing: 2px;">SCAN TO CONNECT</p>
-    <button class="btn" style="max-width: 200px;" onclick="toggleQR(false)">Back</button>
-</div>
-
 <div id="mobile-controls">
-    <div style="display:flex; gap:15px;"><div class="ctrl-btn" id="btn-left">←</div><div class="ctrl-btn" id="btn-right">→</div></div>
+    <div style="display:flex; gap:20px;"><div class="ctrl-btn" id="btn-left">←</div><div class="ctrl-btn" id="btn-right">→</div></div>
     <div class="ctrl-btn" id="btn-up">↑</div>
 </div>
 
 <script>
-    const AU = new (window.AudioContext || window.webkitAudioContext)();
-    function sfx(f, t, type='square', v=0.1) {
-        const osc = AU.createOscillator(); const gain = AU.createGain();
-        osc.type = type; osc.frequency.setValueAtTime(f, AU.currentTime);
-        gain.gain.setValueAtTime(v, AU.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, AU.currentTime + t);
-        osc.connect(gain); gain.connect(AU.destination); osc.start(); osc.stop(AU.currentTime + t);
+    // DATA PARSER FOR THE 430 QUESTIONS
+    const rawData = `
+    What is the Latin root of the word Market? | Mercatus | Mercato | Tradeus | Marketus | A
+    In Latin, "Mercatus" literally means what? | To Buy | To Sell | To Trade | To Exchange | C
+    A "Market" in common parlance is a place where buyers and sellers meet to: | Socialize | Affect purchase and sales | Discuss prices | Trade secrets | B
+    For marketing students, a market is a region where forces of demand and ______ operate. | Supply | Profit | Quality | Competition | A
+    Marketing is the process of discovering and translating wants into: | Profits | Product specifications | Advertisements | High prices | B
+    Which term describes goods, services, ideas, persons, or places being marketed? | Offering | Asset | Product | Commodity | C
+    What is a combination of products, services, and information offered to satisfy a need? | Market Offering | Sales Pitch | Trade Deal | Business Plan | A
+    The individual or organization that actually makes a purchase decision is the: | Consumer | Target | Customer | User | C
+    A "Consumer" is defined as the individual who actually: | Pays the bill | Signs the contract | Uses the product | Sells the product | C
+    In a household, if a parent buys toys for a child, who is the "Customer"? | The Child | The Store | The Parent | The Toy Company | C
+    In the same household toy scenario, who is the "Consumer"? | The Parent | The Store | The Child | The Manufacturer | C
+    Marketing is a total system of business activities designed to plan, price, promote, and: | Distribute | Inventory | Manufacture | Recruit | A
+    "Organization marketing" aims to change attitudes toward: | A specific person | An organization | A city | A global cause | B
+    Marketing designed to influence behavior to improve society's well-being is: | Commercial marketing | Profit marketing | Social marketing | Retail marketing | C
+    Which type of marketing focuses on attitudes toward particular places? | Place marketing | Person marketing | Area marketing | Global marketing | A
+    "Person marketing" is undertaken to change behavior toward: | Groups of people | Particular people | Competitors | Celebrities only | B
+    Marketing is considered both a technology and a: | Religion | Hobby | Philosophy | Expense | C
+    As a technology, marketing is concerned with: | What should be produced | Hiring staff | Fixing machines | Writing code | A
+    As a philosophy, marketing guides: | Factory speed | Business thinking | Legal battles | Stock prices | B
+    The "Marketing Process" is a matching process between producers and: | Governments | Investors | Consumers | Advertisers | C
+    What provides the link to bring about transfer in the title of goods? | The Market | The Factory | The Warehouse | The Bank | A
+    In "Selling," the primary emphasis is on: | Customers' wants | The product | Future growth | Market research | B
+    In "Marketing," the primary emphasis is on: | Customers' wants | Sales volume | Factory capacity | Product features | A
+    A "Selling" oriented company first makes the product and then figures out how to: | Improve it | Sell it | Destroy it | Store it | B
+    A "Marketing" oriented company first determines wants and then figures out how to: | Raise prices | Lower taxes | Satisfy those wants | Hire more staff | C
+    Management in "Selling" is primarily: | Quality oriented | Service oriented | Sales volume oriented | Relationship oriented | C
+    Management in "Marketing" is primarily: | Profit oriented | Inventory oriented | Labor oriented | Cost oriented | A
+    Planning in "Selling" is usually: | Long-run oriented | Short-run oriented | Socially oriented | Never done | B
+    Planning in "Marketing" is usually: | Short-run oriented | Long-run oriented | Locally oriented | Only daily | B
+    Selling stresses the needs of the: | Buyer | Seller | Government | Community | B
+    Marketing stresses the wants of the: | Seller | Manager | Buyer | Manufacturer | C
+    Which stage of evolution involved each family being totally self-reliant? | Exchange stage | Self-sufficient stage | Sales stage | Management stage | B
+    During the self-sufficient stage, humans were primarily: | Factory workers | Hunters or food gatherers | Bankers | Teachers | B
+    Was there a scope for exchange in the self-sufficient stage? | Yes | No | Only for food | Only for tools | B
+    Which stage saw the beginning of the "Division of Labor"? | Self-sufficient stage | Exchange-oriented stage | Production stage | Sales stage | B
+    Surplus goods were first traded via which system? | Credit cards | Barter system | Bitcoin | Gold standard | B
+    The barter system is described as being: | Fast and efficient | Tedious and time-consuming | Only for modern cities | High tech | B
+    Which stage began with the Industrial Revolution? | Exchange stage | Production-oriented stage | Social stage | Digital stage | B
+    The production-oriented stage assumes no ______ efforts are necessary. | Safety | Legal | Promotion | Accounting | C
+    Companies practicing the production concept today are usually: | Small startups | Monopolies | Non-profits | Farmers | B
+    Which stage saw a shift from agriculture to industry? | Self-sufficient stage | Sales-oriented stage | Primitive stage | Barter stage | B
+    The "Selling Concept" belongs to which stage? | Production stage | Sales-oriented stage | Management stage | Social stage | B
+    In the Selling Concept, it is assumed consumers will not buy enough without: | Lower prices | Incentive sales promotion | Better quality | New colors | B
+    The Selling Concept places greater emphasis on ______ than on customer needs. | Increasing sales | Employee health | Saving the environment | Research | A
+    In which stage did production capacity and consumer demand reach equilibrium? | Sales stage | Marketing-oriented stage | Barter stage | Primitive stage | B
+    Which stage is known as the "Modern concept of marketing"? | Production stage | Consumer-oriented stage | Exchange stage | Self-sufficient stage | B
+    In the Consumer-oriented stage, the philosophy is "consumer and his ______." | Money | Satisfaction | Location | Family | B
+    In the Consumer-oriented stage, production was: | Non-existent | Far in excess of demand | Exactly equal to demand | Half of demand | B
+    The "Present stage" of marketing concept is: | Production-oriented | Management-oriented | Sales-oriented | Barter-oriented | B
+    Today, marketing is planned, organized, staffed, and: | Ignored | Controlled | Deleted | Taxed | B
+    Which stage is the "Dawn of the Industrial Revolution"? | Exchange stage | Production stage | Sales stage | Marketing stage | B
+    In the Sales-oriented stage, the rise in what changed consumer behavior? | Living standards | Sea levels | Interest rates | Taxes | A
+    Which stage believes consumers will choose quality, performance, and innovation? | Product concept | Selling concept | Barter concept | Self-sufficient | A
+    Marketing is both a philosophy and a...? | Science | Art | Technology | Business | C
+    In Oman's market, "Services" are an example of what? | Market Offering | Raw Material | Liability | Inventory | A
+    The "Marketing Process" brings together which two groups in exchange? | Managers & Staff | Producers & Consumers | Banks & Stores | Media & Government | B
+    What is the goal of retaining customers? | To close the shop | To grow the business | To lower quality | To hide from competition | B
+    In the "Primitive Period," humans were primarily: | Merchants | Bankers | Hunters or food gatherers | Sailors | C
+    The transition from agriculture to industry happened in which stage? | Self-sufficient | Sales-oriented | Exchange-oriented | Primitive | B
+    Which concept assumes consumers know the competing brands already? | Marketing Concept | Production Concept | Social Concept | Modern Concept | B
+    What is the 4th "P" in the marketing mix provided in the slides? | Physical distribution | People | Packaging | Positioning | A
+    Which concept is aligned with "tomorrow's markets and future growth"? | Selling Concept | Marketing Concept | Production Concept | Self-sufficient Concept | B
+    The act of offering something in return for a desired object is: | Selling | Exchange | Distribution | Planning | B
+    "Place marketing" is Undertaken to maintain attitudes toward: | A country | Particular places | An office | A person | B
+    Which stage saw "Production far in excess of demand"? | Production stage | Sales stage | Consumer-oriented stage | Barter stage | C
+    In the "Management-oriented stage," marketing must be: | Ignored | Planned and controlled | Deleted | Short-term only | B
+    Who helps make it possible for more consumers to enjoy products? | The Seller | The Marketer | The Competitor | The Government | B
+    Market is an "arrangement providing an opportunity to": | Lose money | Exchange goods | Close a business | Avoid taxes | B
+    "Market Offerings" can include information and...? | Problems | Ideas | Complaints | Bills | B
+    Is "Social Marketing" a commercial marketing concept? | No | Yes | Only in Oman | Only in winter | B
+    A parent making a purchase decision is the: | Consumer | Customer | Producer | Seller | B
+    In the "Self-sufficient stage," was there any surplus? | Yes | No | Only in food | Only in tools | B
+    "Marketing Concept" was a rethink forced by what? | High taxes | Competition | New laws | Lack of labor | B
+    Management in marketing is oriented toward: | Sales volume | Profit | Cost cutting | Hiring | B
+    Which concept stresses the "Needs of the Sellers"? | Marketing Concept | Selling Concept | Modern Concept | Consumer Concept | B
+    "Superior customer value" helps build strong what? | Walls | Relationships | Debts | Factories | B
+    The evolution of marketing has how many main stages listed? | 3 | 7 | 10 | 5 | B
+    What was the "tedious and time-consuming" process? | Internet shopping | Barter system | Credit cards | Cash payments | B
+    "Monopolies" often practice which concept today? | Social concept | Production concept | Consumer concept | Selling concept | B
+    "Marketing mix" is provided to meet: | Manager's needs | Consumer demand | Legal rules | Bank requirements | B
+    Which stage is "Management-oriented"? | The first stage | The present stage | The third stage | The ancient stage | B
+    "Customer satisfaction" is the outlook of which stage? | Production | Consumer-oriented | Sales | Barter | B
+    "Total system of business activities" defines: | Accounting | Marketing | HR | Logistics | B
+    "Marketing philosophy" determines: | Factory location | Whether to produce or not | Staff salary | Office hours | B
+    "Exchange-oriented stage" followed which period? | Modern period | Self-sufficient period | Digital period | Industrial period | B
+    "Price" is part of the: | 4Ps | SWOT | HR plan | Legal code | A
+    Marketing is a "Matching process" for: | Marriages | Producers and Consumers | Colors | Banks | B
+    "Mass media" is an influence on: | Weather | Marketing process | History | Biology | B
+    What is the focus of human psychology and behavior in marketing? | Needs | Costs | Logistics | Taxes | A
+    Needs like food, drink, and shelter are classified as: | Social needs | Basic physical needs | Emotional needs | Luxury needs | B
+    Belonging, security, and love are examples of: | Physical needs | Physiological needs | Social and emotional needs | Functional needs | C
+    What motivates people to find a solution, leading to consumption behavior? | Needs | Advertising | Discounts | Packaging | A
+    Needs come from basic biological and ______ aspects of human existence. | Financial | Psychological | Legal | Political | B
+    Consumer preferences for specific ways to satisfy a need are called: | Needs | Demands | Wants | Values | C
+    A person is thirsty (need) but chooses a Coke. Choosing Coke is a: | Need | Want | Utility | Segment | B
+    Which of these shapes a consumer's wants? | Social influences | Past history | Consumption behavior | All of the above | D
+    Do different people always have the same wants to satisfy the same need? | Yes | No | Only in Oman | Only for food | B
+    Benefits based on a product attribute providing utility are: | Emotional benefits | Psychological benefits | Functional benefits | Social benefits | C
+    Which benefit includes the phone capability of an iPhone? | Functional | Emotional | Psychological | Cultural | A
+    Why do functional benefits often fail to differentiate a brand? | They are too expensive | They are easy to copy | Customers don't like them | They are too complex | B
+    Benefits providing a positive feeling during purchase or use are: | Functional | Financial | Emotional | Technical | C
+    The "feel-good" factor of buying fair-trade groceries is an: | Functional benefit | Emotional benefit | Physical benefit | Economic benefit | B
+    Perceived benefits regarding status, happiness, or independence are: | Functional | Psychological | Geographic | Behavioral | B
+    Psychological benefits are developed through: | Production speed | Promotional efforts | Lowering prices | Warehousing | B
+    Cultural, social, personal, and psychological factors influence: | Factory output | Buyer's purchase decisions | Government taxes | Stock market | B
+    Motivation, perception, and learning are considered ______ factors. | Socio-cultural | Environmental | Psychological | Geographic | C
+    Family and reference groups are considered ______ factors. | Personal | Socio-cultural | Psychological | Economic | B
+    Economics, technology, and law are ______ factors in buyer behavior. | Psychological | Social | Environmental | Personal | C
+    What is the basic determinant of a person's wants? | Price | Culture | Weather | Storage | B
+    Nationality, religion, and racial groups are types of: | Social classes | Sub-cultures | Personalities | Life-cycles | B
+    Hierarchically ordered divisions in society whose members share values are: | Social classes | Sub-cultures | Reference groups | Occupations | A
+    Groups that have a direct or indirect influence on a person’s attitudes are: | Suppliers | Reference Groups | Competitors | Stockholders | B
+    What constitutes the most influential group on one's attitudes? | The Bank | The Family | The Media | The Government | B
+    Roles and Status are part of which influence factor? | Personal | Social | Cultural | Environmental | B
+    Each role a person plays in a group carries a: | Salary | Status | Debt | License | B
+    Lifestyle is defined by a person's activities, interests, and: | Bank balance | Opinions | Height | Family size | B
+    Psychological characteristics leading to consistent responses to the environment is: | Lifestyle | Personality | Self-concept | Culture | B
+    A luxury item is deemed highly ______ within a culture. | Necessary | Desirable | Cheap | Illegal | B
+    Demand for luxury goods ______ when a person's wealth increases. | Decreases | Increases | Stays the same | Becomes zero | B
+    Wealthy people are disproportionate consumers of luxury goods because: | They have no needs | Luxury goods are expensive | They hate necessity goods | They work in factories | B
+    Purchasing goods mainly to show off one's wealth is called: | Functional consumption | Conspicuous consumption | Necessary consumption | Niche consumption | B
+    Necessity goods are bought regardless of: | Quality | Income level | Location | Weather | B
+    Which is NOT a characteristic of a luxury good? | Uniqueness | Mass production | Scarcity | High quality | B
+    Luxury goods must convey emotions and be considered a: | Tool | Work of art | Liability | Raw material | B
+    What determines what is categorized as a "necessity" or "luxury"? | The Government | Individual income/location | The Store manager | The Factory | B
+    The Consumer Buying Process begins with: | Information Search | Need Recognition | Purchase Decision | Alternatives Evaluation | B
+    When a person feels a certain desire has arisen, they are in the ______ stage. | Evaluation | Need Recognition | Post-purchase | Information Search | B
+    Using family, friends, or neighbors to find a product brand is part of: | Need Recognition | Information Search | Purchase Decision | Post-purchase | B
+    Viewing a product as a "bundle of attributes" occurs during: | Information Search | Evaluation of Alternatives | Purchase Decision | Need Recognition | B
+    Information cues about quality and price help in: | Factory design | Evaluating alternatives | Staff hiring | Tax planning | B
+    Brand images and brand concepts help in: | Evaluation of alternatives | Stock counting | Legal filings | Payroll | A
+    Developing likes and dislikes about alternative brands leads to: | Post-purchase anxiety | Purchase decision | Need recognition | Information search | B
+    Product use provides feedback on attitudes in the ______ stage. | Evaluation | Information Search | Post-Purchase | Need Recognition | C
+    If satisfaction matches expectation, it creates: | Negative feelings | Brand preference | Anxiety | Confusion | B
+    Negative feelings occur after a purchase if the brand does NOT: | Increase in price | Yield desired satisfaction | Have a logo | Use mass media | B
+    Organizational buying (B2B) is generally more ______ than consumer buying. | Informal | Formal | Fast | Random | B
+    B2B buying decisions tend to be more: | Emotional | Information-intensive | Based on ads | Impulsive | B
+    How many stages are in the organizational buying process? | Five | Eight | Three | Ten | B
+    The B2B buying process begins with: | Product Specification | Problem Recognition | Supplier Search | Order Routine | B
+    Internal stimuli for B2B problem recognition includes: | Presentation by salesperson | Business need from operations | Ad in magazine | Trade show info | B
+    In B2B, buyers must describe the need thoroughly so everyone understands the: | Price only | Nature of the solution | Logo design | Office location | B
+    Who is usually responsible for "Product Specification" in B2B? | Marketing dept | Engineering dept | HR dept | Reception | B
+    In the "Supplier Search" stage, B2B buyers often use: | Only TV ads | The Internet | Only phone calls | No research | B
+    Suppliers are invited to submit proposals during: | Supplier Search | Proposal Solicitation | Order-Routine | Need Description | B
+    During "Supplier Selection," proposals may be scored using: | Random luck | A common set of criteria | Only the lowest price | Alphabetical order | B
+    Negotiating final terms like quantity and delivery occurs during: | Supplier Search | Supplier Selection | Problem Recognition | Need Description | B
+    The final order with technical specs and warranties is written in: | Proposal Solicitation | Order-Routine Specification | Performance Review | Need Description | B
+    Feedback on a B2B supplier's efficiency and quality is given during: | Product Specification | Performance Review | Supplier Search | Problem Recognition | B
+    STP stands for: | Selling, Trading, Pricing | Segmentation, Targeting, Positioning | Strategy, Tactics, Planning | Standards, Tools, Processes | B
+    Dividing a market into nations, regions, or cities is: | Demographic segmentation | Geographic segmentation | Psychographic segmentation | Behavioral segmentation | B
+    Campbell Soup launching non-spicy sauce in certain US regions is: | Geographic segmentation | Demographic segmentation | Psychographic | Behavioral | A
+    Dividing a market based on social class, lifestyle, or personality is: | Geographic | Psychographic segmentation | Demographic | Behavioral | B
+    A cruise line targeting "adventure seekers" uses: | Geographic segmentation | Psychographic segmentation | Demographic segmentation | Behavioral segmentation | B
+    Dividing a market based on consumer knowledge, attitudes, or responses is: | Demographic | Behavioral segmentation | Geographic | Psychographic | B
+    Oman Air’s "Sindbad" frequent flier program is an example of: | Geographic segmentation | Behavioral segmentation | Demographic segmentation | Psychographic segmentation | B
+    Evaluating each segment's attractiveness to enter is: | Market Targeting | Market Positioning | Market Research | Market Production | A
+    "Undifferentiated marketing" is also known as: | Niche marketing | Mass marketing | Segmented marketing | Micro marketing | B
+    Which strategy targets the whole market with one offer? | Differentiated marketing | Undifferentiated marketing | Concentrated marketing | Local marketing | B
+    FMCGs (Fast Moving Consumer Goods) often use: | Niche marketing | Mass marketing | Micromarketing | Differentiated marketing | B
+    Targeting several market segments with separate offers for each is: | Undifferentiated marketing | Differentiated marketing | Concentrated marketing | Mass marketing | B
+    Proctor & Gamble marketing 6 different laundry brands is: | Undifferentiated marketing | Differentiated marketing | Concentrated marketing | Local marketing | B
+    Hewlett Packard targeting home users vs. large businesses is: | Niche marketing | Differentiated marketing | Mass marketing | Individual marketing | B
+    Going after a large share of one or a few smaller segments is: | Differentiated marketing | Concentrated (Niche) marketing | Mass marketing | Undifferentiated marketing | B
+    Ladies' Handbag brands often target a specific segment, which is: | Mass marketing | Niche marketing | Undifferentiated marketing | Global marketing | B
+    Product Positioning is the place a product occupies in the: | Warehouse | Consumer's mind | Factory | Sales report | B
+    Volvo positioning itself on "safety" is an example of: | Pricing | Positioning | Distribution | Production | B
+    Toyota positioning itself on "fuel efficiency" is: | Segmentation | Positioning | Targeting | Promotion | B
+    Head-to-head positioning involves competing directly with: | New markets | Competitors on similar attributes | Suppliers | Internal staff | B
+    Seeking a less competitive market niche to locate a brand is: | Head-to-head positioning | Differentiation positioning | Mass positioning | Direct positioning | B
+    The first step in Product Positioning is to identify: | Competitor prices | Important attributes | Factory capacity | Staff names | B
+    "Repositioning" is the ______ step in Product Positioning. | First | Fourth | Second | Third | B
+    An "Orderly process" where buyers interact with the environment defines: | Buyer behavior | Accounting | Legal work | Logistics | A
+    Nationality groups and religious groups are types of: | Social classes | Sub-cultures | Personalities | Lifestyles | B
+    Social factors influencing decision making include: | Reference groups | Family | Roles and Status | All of the above | D
+    The "Self-concept" is a type of ______ factor. | Cultural | Personal | Environmental | Social | B
+    "Durability and reliability" are results of ______ in luxury goods. | Cheap materials | High quality | Mass production | Low prices | B
+    In the B2B process, catalog submission happens during: | Problem Recognition | Proposal Solicitation | Performance Review | Need Description | B
+    "Information search" includes sources like: | Only TV | Family, friends, and neighbors | Only the store manager | No sources | B
+    A product viewed as a "bundle of attributes" belongs to: | Need Recognition | Evaluation of Alternatives | Purchase Decision | Post-purchase | B
+    "Cognitive dissonance" (anxiety/doubts) can happen during: | Information Search | Post-Purchase Experience | Need Recognition | Supplier Search | B
+    In B2B, internal stimuli for problem recognition might be: | A competitor's ad | A business need from operations | A trade show | A salesperson | B
+    "Product specification" in B2B is usually handled by: | Salespeople | Engineers | Customers | Media | B
+    "Psychographic" segmentation includes: | Nations/Cities | Lifestyle/Personality | Age/Gender | Usage/Loyalty | B
+    "Behavioral" segmentation includes: | Religion | User status/Loyalty | Social class | Climate | B
+    Mass marketing focuses on what is ______ in the needs of consumers. | Different | Common | Unique | Secret | B
+    Tide being positioned as a "powerful, all-purpose detergent" is: | Targeting | Positioning | Segmentation | Distribution | B
+    Comparing Ooredoo vs. Omantel is an example of: | Head-to-head positioning | Niche positioning | Differentiation positioning | Local positioning | A
+    The simulation game mentioned in the slides is about: | Car sales | Ice cream segmentation | Mobile phones | Airline seats | B
+    `;
+
+    // ENGINE FOR UNIQUE RANDOM SELECTION
+    let masterQuestions = [];
+    let sessionPool = [];
+
+    function initQuestions() {
+        const lines = rawData.trim().split('\n');
+        masterQuestions = lines.map(line => {
+            const parts = line.split('|').map(p => p.trim());
+            if (parts.length < 6) return null;
+            // Map Answer Key (A=0, B=1, C=2, D=3)
+            const keyMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
+            return {
+                q: parts[0],
+                o: [parts[1], parts[2], parts[3], parts[4]],
+                a: keyMap[parts[5]]
+            };
+        }).filter(q => q !== null);
+        refreshPool();
     }
 
-    const questions = [
-        { q: "What is the Latin root of the word Market?", o: ["Mercato", "Tradeus", "Mercatus", "Marketus"], a: 2 },
-        { q: "STP stands for:", o: ["Strategy, Tactics, Planning", "Selling, Trading, Pricing", "Segmentation, Targeting, Positioning", "Standards"], a: 2 },
-        { q: "Volvo's 'Safety' focus is an example of:", o: ["Targeting", "Positioning", "Pricing", "Production"], a: 1 }
-    ];
+    function refreshPool() {
+        sessionPool = [...masterQuestions].sort(() => Math.random() - 0.5);
+    }
+
+    // GAME ENGINE
+    const AU = new (window.AudioContext || window.webkitAudioContext)();
+    function sfx(f, t, type='square', v=0.04) {
+        try {
+            const osc = AU.createOscillator(); const gain = AU.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(f, AU.currentTime);
+            gain.gain.setValueAtTime(v, AU.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, AU.currentTime + t);
+            osc.connect(gain); gain.connect(AU.destination); osc.start(); osc.stop(AU.currentTime + t);
+        } catch(e){}
+    }
 
     const gCanvas = document.getElementById('gameCanvas');
     const bCanvas = document.getElementById('bgCanvas');
     const gctx = gCanvas.getContext('2d');
     const bctx = bCanvas.getContext('2d');
 
-    let state = 'MENU', lives = 3, sector = 1, cameraX = 0, username = "", checkpointRotation = 0;
+    let state = 'MENU', lives = 3, sector = 1, cameraX = 0, username = "";
     let loopID;
-    let best = localStorage.getItem('bs_best') || 1;
-    document.getElementById('hs-text').innerText = `BEST: SECTOR ${best}`;
-
-    const player = { x: 100, y: 0, w: 32, h: 32, dx: 0, dy: 0, speed: 7.5, gravity: 0.65, jPower: -13, grounded: false, canDJ: true, trail: [], lastFace: 1 };
-    let platforms = [], spikes = [], checkpoints = [], goal = { x: 0, y: 0 };
-    let lastCheck = { x: 100, y: 0 };
+    const player = { x: 100, y: 0, w: 28, h: 28, dx: 0, dy: 0, speed: 6.5, gravity: 0.6, jPower: -11.5, grounded: false, canDJ: true };
+    let platforms = [], spikes = [], goal = { x: 0 };
     const keys = { left: false, right: false };
 
-    function toggleFS() {
-        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-        else if (document.exitFullscreen) document.exitFullscreen();
+    function resize() { 
+        gCanvas.width = bCanvas.width = window.innerWidth; 
+        gCanvas.height = bCanvas.height = window.innerHeight; 
+        drawStars(); 
     }
-
-    function resize() { gCanvas.width = bCanvas.width = window.innerWidth; gCanvas.height = bCanvas.height = window.innerHeight; drawStars(); }
     window.onresize = resize; resize();
 
-    window.onkeydown = e => { 
-        if(e.code==='ArrowLeft'||e.code==='KeyA') { keys.left=true; player.lastFace = -1; }
-        if(e.code==='ArrowRight'||e.code==='KeyD') { keys.right=true; player.lastFace = 1; }
-        if(e.code==='ArrowUp'||e.code==='KeyW'||e.code==='Space') jump(); 
-    };
-    window.onkeyup = e => { if(e.code==='ArrowLeft'||e.code==='KeyA') keys.left=false; if(e.code==='ArrowRight'||e.code==='KeyD') keys.right=false; };
-    
     function jump() {
         if(player.grounded) { player.dy = player.jPower; player.grounded = false; player.canDJ = true; sfx(400, 0.1); }
         else if(player.canDJ) { player.dy = player.jPower * 0.85; player.canDJ = false; sfx(600, 0.1); }
@@ -184,60 +368,50 @@
 
     const mb = (id, k) => { 
         const el = document.getElementById(id); 
-        el.onpointerdown = e => { e.preventDefault(); if(k==='up') jump(); else { keys[k]=true; player.lastFace = (k==='left'?-1:1); }};
-        el.onpointerup = e => { e.preventDefault(); if(k!=='up') keys[k]=false; };
+        el.addEventListener('touchstart', e => { e.preventDefault(); if(k==='up') jump(); else keys[k]=true; }, {passive: false});
+        el.addEventListener('touchend', e => { e.preventDefault(); if(k!=='up') keys[k]=false; }, {passive: false});
     };
     mb('btn-left', 'left'); mb('btn-right', 'right'); mb('btn-up', 'up');
 
     function drawStars() {
         bctx.fillStyle = '#000'; bctx.fillRect(0,0,bCanvas.width, bCanvas.height);
-        for(let i=0; i<200; i++) {
+        for(let i=0; i<80; i++) {
             bctx.fillStyle = `rgba(255,255,255,${Math.random()})`;
-            bctx.beginPath(); bctx.arc(Math.random()*bCanvas.width, Math.random()*bCanvas.height, Math.random()*1.5, 0, Math.PI*2); bctx.fill();
+            bctx.beginPath(); bctx.arc(Math.random()*bCanvas.width, Math.random()*bCanvas.height, 1, 0, Math.PI*2); bctx.fill();
         }
     }
 
     function generateLevel() {
-        spikes = []; checkpoints = [];
-        platforms = [{ x: 0, y: gCanvas.height-120, w: 600, h: 120 }];
-        let curX = 600;
-        for(let i=0; i<35; i++) {
-            let gap = 160 + Math.random()*100;
-            let width = 180 + Math.random()*200;
-            let y = (gCanvas.height-160) - (Math.random()*250);
-            if(y < 150) y = 150;
-            const plat = { x: curX+gap, y: y, w: width, h: 40 };
-            platforms.push(plat);
-            if(i % 6 === 0 && i !== 0) checkpoints.push({ x: plat.x + plat.w/2, y: plat.y - 50, active: false });
-            else if(Math.random() < 0.6 && i > 1) {
-                spikes.push({ x: plat.x + (plat.w/2) - 13, y: plat.y - 22, w: 26, h: 22 });
-            }
+        spikes = [];
+        platforms = [{ x: 0, y: gCanvas.height-80, w: 500, h: 80 }];
+        let curX = 500;
+        for(let i=0; i<25; i++) {
+            let gap = 130 + Math.random()*80;
+            let width = 140 + Math.random()*150;
+            let y = (gCanvas.height-140) - (Math.random()*200);
+            if(y < 120) y = 120;
+            platforms.push({ x: curX+gap, y: y, w: width, h: 30 });
+            if(Math.random() < 0.4 && i > 1) spikes.push({ x: curX+gap + (width/2) - 12, y: y - 20, w: 24, h: 20 });
             curX += gap + width;
         }
-        goal = { x: curX + 200, y: gCanvas.height-120 };
-        player.x = lastCheck.x; player.y = lastCheck.y;
+        goal = { x: curX + 150 };
+        player.x = 100; player.y = gCanvas.height-200;
     }
 
     function loop() {
         if(state !== 'PLAYING') return;
-        checkpointRotation += 0.05;
-        if(keys.left) player.dx = -player.speed; else if(keys.right) player.dx = player.speed; else player.dx *= 0.82;
+        if(keys.left) player.dx = -player.speed; else if(keys.right) player.dx = player.speed; else player.dx *= 0.8;
         player.dy += player.gravity; player.x += player.dx; player.y += player.dy;
-        player.trail.push({x: player.x, y: player.y}); if(player.trail.length > 12) player.trail.shift();
         player.grounded = false;
         platforms.forEach(p => {
-            if(player.x < p.x + p.w && player.x + player.w > p.x && player.y + player.h > p.y && player.y + player.h < p.y + p.h + 15) {
+            if(player.x < p.x + p.w && player.x + player.w > p.x && player.y + player.h > p.y && player.y + player.h < p.y + p.h + 10) {
                 if(player.dy > 0) { player.y = p.y - player.h; player.dy = 0; player.grounded = true; player.canDJ = true; }
             }
         });
-        checkpoints.forEach(c => {
-            let dist = Math.hypot(player.x + 16 - c.x, player.y + 16 - c.y);
-            if(!c.active && dist < 40) { c.active = true; lastCheck = { x: c.x - 16, y: c.y - 16 }; sfx(900, 0.3, 'sine'); }
-        });
         spikes.forEach(s => { if(player.x < s.x + s.w - 5 && player.x + player.w > s.x + 5 && player.y < s.y + s.h && player.y + player.h > s.y + 5) handleHit(); });
-        if(player.y > gCanvas.height + 200) handleHit();
+        if(player.y > gCanvas.height + 100) handleHit();
         if(player.x > goal.x) triggerQuiz();
-        cameraX += ((player.x - gCanvas.width/3) - cameraX) * 0.1;
+        cameraX += ((player.x - gCanvas.width/4) - cameraX) * 0.1;
         if(cameraX < 0) cameraX = 0;
         render();
         loopID = requestAnimationFrame(loop);
@@ -246,36 +420,24 @@
     function render() {
         gctx.clearRect(0,0, gCanvas.width, gCanvas.height);
         gctx.save(); gctx.translate(-cameraX, 0);
-        platforms.forEach(p => { gctx.fillStyle = '#161b22'; gctx.fillRect(p.x, p.y, p.w, p.h); gctx.strokeStyle = '#30363d'; gctx.strokeRect(p.x, p.y, p.w, p.h); });
-        checkpoints.forEach(c => {
-            gctx.save(); gctx.translate(c.x, c.y); gctx.rotate(checkpointRotation);
-            gctx.shadowBlur = 20; gctx.shadowColor = c.active ? '#00ff88' : '#333';
-            gctx.strokeStyle = c.active ? '#00ff88' : '#666'; gctx.lineWidth = 3;
-            gctx.beginPath(); gctx.moveTo(0, -20); gctx.lineTo(15, 10); gctx.lineTo(-15, 10); gctx.closePath(); gctx.stroke();
-            if(c.active) { gctx.fillStyle = 'rgba(0,255,136,0.3)'; gctx.fill(); }
-            gctx.restore();
-        });
-        spikes.forEach(s => { gctx.fillStyle = '#ff4d4d'; gctx.beginPath(); gctx.moveTo(s.x, s.y+s.h); gctx.lineTo(s.x+s.w/2, s.y); gctx.lineTo(s.x+s.w, s.y+s.h); gctx.fill(); });
-        gctx.fillStyle = '#00f2ff'; gctx.fillRect(goal.x, goal.y-150, 5, 150);
-        player.trail.forEach((t, i) => { gctx.globalAlpha = i/15; gctx.fillStyle = '#00f2ff'; gctx.fillRect(t.x, t.y, player.w, player.h); });
-        gctx.globalAlpha = 1; gctx.fillStyle = '#00f2ff'; gctx.shadowBlur = 15; gctx.shadowColor = '#00f2ff';
+        gctx.fillStyle = '#161b22'; platforms.forEach(p => gctx.fillRect(p.x, p.y, p.w, p.h));
+        gctx.fillStyle = '#ff4d4d'; spikes.forEach(s => { gctx.beginPath(); gctx.moveTo(s.x, s.y+s.h); gctx.lineTo(s.x+s.w/2, s.y); gctx.lineTo(s.x+s.w, s.y+s.h); gctx.fill(); });
+        gctx.fillStyle = '#00f2ff'; gctx.fillRect(goal.x, 0, 4, gCanvas.height);
         gctx.fillRect(player.x, player.y, player.w, player.h);
-        gctx.fillStyle = '#000'; gctx.fillRect(player.lastFace === 1 ? player.x + 18 : player.x + 4, player.y + 8, 10, 10);
         gctx.restore();
     }
 
     function handleHit() {
-        sfx(80, 0.3, 'sawtooth');
-        lives--; updateHUD();
-        if(lives <= 0) { lives = 3; lastCheck = { x: 100, y: gCanvas.height-250 }; generateLevel(); updateHUD(); }
-        else { player.x = lastCheck.x; player.y = lastCheck.y; player.dx = player.dy = 0; }
+        sfx(80, 0.2, 'sawtooth'); lives--; updateHUD();
+        if(lives <= 0) startGame(); else { player.x = 100; player.y = gCanvas.height-200; player.dx = player.dy = 0; }
     }
 
     function startGame() {
+        if(sessionPool.length < 5) refreshPool();
         cancelAnimationFrame(loopID);
         AU.resume();
-        username = document.getElementById('username').value.trim() || "REHAN";
-        lives = 3; sector = 1; lastCheck = { x: 100, y: gCanvas.height-250 };
+        username = document.getElementById('username').value || "REHAN";
+        lives = 3; sector = 1; 
         showScreen(null); document.getElementById('hud').style.display = 'flex';
         state = 'PLAYING'; generateLevel(); updateHUD(); loop();
     }
@@ -283,27 +445,40 @@
     function triggerQuiz() {
         cancelAnimationFrame(loopID);
         state = 'QUIZ'; showScreen('quiz-screen');
-        const q = questions[Math.floor(Math.random()*questions.length)];
+        
+        if(sessionPool.length === 0) refreshPool();
+        const q = sessionPool.pop(); // Pulls unique question
+        
         document.getElementById('q-text').innerText = q.q;
         const box = document.getElementById('opt-box'); box.innerHTML = '';
         q.o.forEach((opt, i) => {
+            if(!opt) return;
             const b = document.createElement('button'); b.className = 'opt-btn'; b.innerText = opt;
             b.onclick = () => {
                 if(i === q.a) { 
-                    sfx(1200, 0.3); lives = Math.min(3, lives + 1);
-                    setTimeout(() => { sector++; if(sector > best) { best = sector; localStorage.setItem('bs_best', best); } showScreen(null); state = 'PLAYING'; generateLevel(); updateHUD(); loop(); }, 1000); 
-                } else { 
-                    sfx(50, 0.5, 'sawtooth');
-                    setTimeout(() => { sector = 1; lives = 3; startGame(); }, 1500); 
-                }
+                    sfx(1200, 0.2); sector++; 
+                    showScreen(null); state = 'PLAYING'; generateLevel(); updateHUD(); loop();
+                } else { sfx(50, 0.4, 'sawtooth'); startGame(); }
             };
             box.appendChild(b);
         });
     }
 
-    function updateHUD() { document.getElementById('hud-user').innerText = username; document.getElementById('hud-level').innerText = sector; document.getElementById('hud-lives').innerText = lives; }
-    function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); if(id) document.getElementById(id).classList.add('active'); document.getElementById('ui-layer').style.pointerEvents = id ? 'auto' : 'none'; }
-    function toggleQR(s) { document.getElementById('qr-modal').classList.toggle('active', s); }
+    function updateHUD() { 
+        document.getElementById('hud-user').innerText = username; 
+        document.getElementById('hud-level').innerText = sector; 
+        document.getElementById('hud-lives').innerText = lives; 
+    }
+    
+    function showScreen(id) { 
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); 
+        if(id) document.getElementById(id).classList.add('active'); 
+        document.getElementById('ui-layer').style.pointerEvents = id ? 'auto' : 'none'; 
+    }
+
+    initQuestions();
+    let best = localStorage.getItem('bs_best') || 1;
+    document.getElementById('hs-text').innerText = `RECORD: SECTOR ${best}`;
 </script>
 </body>
 </html>
