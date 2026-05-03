@@ -12,10 +12,10 @@
             --cyan-glow: rgba(0, 242, 255, 0.6);
             --text: #e6edf3;
             --danger: #ff4d4d;
+            --success: #00ff88;
             --platform-border: #30363d;
         }
 
-        /* STRICT ANTI-ZOOM AND SCROLL LOCK */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; user-select: none; touch-action: none; }
         
         body { 
@@ -44,16 +44,18 @@
             gap: 12px; 
             background: var(--card-bg); 
             border: 1px solid var(--platform-border); 
-            border-radius: 12px; 
-            padding: 25px; 
+            border-radius: 16px; 
+            padding: 30px; 
             width: 90%; 
-            max-width: 380px; 
+            max-width: 450px; 
             backdrop-filter: blur(15px);
             text-align: center;
         }
-        .screen.active { display: flex; }
+        .screen.active { display: flex; animation: slideIn 0.3s ease-out; }
 
-        h1 { color: var(--cyan); letter-spacing: 2px; text-shadow: 0 0 10px var(--cyan-glow); font-size: 1.8rem; margin-bottom: 5px; }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        h1 { color: var(--cyan); letter-spacing: 3px; text-shadow: 0 0 10px var(--cyan-glow); font-size: 2rem; margin-bottom: 5px; }
         
         input { 
             width: 100%; 
@@ -62,26 +64,36 @@
             border: 1px solid var(--platform-border); 
             border-radius: 8px; 
             color: white; 
-            font-size: 16px; /* Critical: 16px prevents iOS auto-zoom */
+            font-size: 16px; /* Prevents iOS Zoom */
             outline: none; 
             text-align: center; 
-            touch-action: manipulation;
         }
         
-        .btn { background: var(--cyan); color: #000; border: none; padding: 14px; border-radius: 8px; font-weight: bold; text-transform: uppercase; font-size: 0.9rem; width: 100%; cursor: pointer; }
-        
-        #hud { position: absolute; top: 15px; left: 10px; right: 10px; display: none; justify-content: space-between; font-size: 0.65rem; z-index: 10; pointer-events: none; }
-        #hud span { background: var(--card-bg); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--platform-border); color: #fff; }
+        .btn { background: var(--cyan); color: #000; border: none; padding: 14px; border-radius: 8px; font-weight: bold; text-transform: uppercase; cursor: pointer; width: 100%; }
+        .btn-secondary { background: transparent; border: 1px solid var(--platform-border); color: var(--text); margin-top: 5px; }
 
-        .opt-btn { background: rgba(33, 38, 45, 0.85); border: 1px solid var(--platform-border); color: white; padding: 15px; border-radius: 8px; text-align: left; font-size: 0.9rem; width: 100%; margin-bottom: 8px; touch-action: manipulation; }
+        #hud { position: absolute; top: 15px; left: 10px; right: 10px; display: none; justify-content: space-between; font-size: 0.7rem; z-index: 10; pointer-events: none; }
+        #hud span { background: var(--card-bg); padding: 8px 15px; border-radius: 6px; border: 1px solid var(--platform-border); }
+
+        .opt-btn { background: rgba(33, 38, 45, 0.85); border: 1px solid var(--platform-border); color: white; padding: 14px; border-radius: 8px; text-align: left; font-size: 0.9rem; width: 100%; margin-bottom: 6px; }
+
+        /* QR MODAL */
+        #qr-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; justify-content: center; align-items: center; flex-direction: column; gap: 20px; pointer-events: auto;}
+        #qr-modal.active { display: flex; }
+        .qr-frame { background: #fff; padding: 10px; border-radius: 10px; }
+        .qr-frame img { width: 250px; height: 250px; display: block; }
 
         #mobile-controls { position: absolute; bottom: 30px; left: 15px; right: 15px; display: flex; justify-content: space-between; z-index: 50; pointer-events: none; }
-        .ctrl-btn { width: 75px; height: 75px; background: rgba(0,242,255,0.1); border: 2px solid var(--cyan); border-radius: 50%; color: var(--cyan); display: flex; justify-content: center; align-items: center; font-size: 1.8rem; pointer-events: auto; }
+        .ctrl-btn { width: 70px; height: 70px; background: rgba(0,242,255,0.1); border: 2px solid var(--cyan); border-radius: 50%; color: var(--cyan); display: flex; justify-content: center; align-items: center; font-size: 1.5rem; pointer-events: auto; }
+        
+        .fs-toggle { position: fixed; top: 60px; right: 10px; z-index: 300; background: rgba(0,0,0,0.5); border: 1px solid var(--cyan); color: var(--cyan); padding: 5px 10px; border-radius: 5px; font-size: 0.6rem; cursor: pointer; pointer-events: auto; }
         
         @media (min-width: 1024px) { #mobile-controls { display: none; } }
     </style>
 </head>
 <body>
+
+<button class="fs-toggle" onclick="toggleFS()">⛶ FULLSCREEN</button>
 
 <div id="canvas-container">
     <canvas id="bgCanvas"></canvas>
@@ -89,7 +101,7 @@
 </div>
 
 <div id="hud">
-    <span>PLAYER: <span id="hud-user" style="color:var(--cyan)"></span></span>
+    <span>USER: <span id="hud-user" style="color:var(--cyan)"></span></span>
     <span>LIVES: <span id="hud-lives" style="color:var(--danger)">3</span></span>
     <span>SECTOR: <span id="hud-level" style="color:var(--cyan)">1</span></span>
 </div>
@@ -97,26 +109,42 @@
 <div id="ui-layer">
     <div id="menu-screen" class="screen active">
         <h1>BRAIN-STORM</h1>
-        <p id="hs-text" style="color: #8b949e; font-size: 0.75rem; margin-bottom: 10px;"></p>
-        <input type="text" id="username" placeholder="Enter Alias..." maxlength="12" autocomplete="off">
-        <button class="btn" onclick="startGame()">Start Game</button>
-        <div style="margin-top: 10px; font-size: 0.7rem; color: #444;">No-Repeat MCQ Engine Active</div>
+        <p id="hs-text" style="color: #8b949e; font-size: 0.8rem; margin-bottom: 5px;"></p>
+        <input type="text" id="username" placeholder="Alias..." maxlength="12">
+        <button class="btn" onclick="startGame()">Start Mission</button>
+        <button class="btn btn-secondary" onclick="showScreen('credits')">Credits</button>
+        <button class="btn btn-secondary" onclick="toggleQR(true)">Share System</button>
+    </div>
+
+    <div id="credits" class="screen">
+        <h2>CREDITS</h2>
+        <p style="color:#8b949e; margin-top:10px">Lead Developer</p>
+        <p style="font-size: 1.2rem; font-weight: bold; color: var(--cyan);">Muhammad Rehan Shaukat</p>
+        <p style="font-size: 0.9rem;">Lecturer in UTAS</p>
+        <button class="btn btn-secondary" onclick="showScreen('menu-screen')" style="margin-top:15px">Back</button>
     </div>
 
     <div id="quiz-screen" class="screen">
-        <h2 style="color: var(--cyan); font-size: 1.1rem; margin-bottom: 10px;">TERMINAL CHALLENGE</h2>
-        <p id="q-text" style="margin-bottom: 15px; font-size: 0.95rem; line-height: 1.4; text-align: left; color: #fff;"></p>
+        <h2 style="color: var(--cyan); font-size: 1.1rem;">DATA VERIFICATION</h2>
+        <p id="q-text" style="margin: 15px 0; font-size: 0.95rem; text-align: left; line-height: 1.4;"></p>
         <div id="opt-box"></div>
     </div>
 </div>
 
+<div id="qr-modal">
+    <div class="qr-frame">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=https%3A%2F%2Fibrahimrehan2020-rgb.github.io%2FInnovativeLearningGame%2F" alt="QR">
+    </div>
+    <button class="btn" style="width:150px" onclick="toggleQR(false)">Close</button>
+</div>
+
 <div id="mobile-controls">
-    <div style="display:flex; gap:20px;"><div class="ctrl-btn" id="btn-left">←</div><div class="ctrl-btn" id="btn-right">→</div></div>
+    <div style="display:flex; gap:15px;"><div class="ctrl-btn" id="btn-left">←</div><div class="ctrl-btn" id="btn-right">→</div></div>
     <div class="ctrl-btn" id="btn-up">↑</div>
 </div>
 
 <script>
-    // DATA PARSER FOR THE 430 QUESTIONS
+    // DATA: ALL CHAPTERS INTEGRATED
     const rawData = `
     What is the Latin root of the word Market? | Mercatus | Mercato | Tradeus | Marketus | A
     In Latin, "Mercatus" literally means what? | To Buy | To Sell | To Trade | To Exchange | C
@@ -308,31 +336,22 @@
     The simulation game mentioned in the slides is about: | Car sales | Ice cream segmentation | Mobile phones | Airline seats | B
     `;
 
-    // ENGINE FOR UNIQUE RANDOM SELECTION
-    let masterQuestions = [];
-    let sessionPool = [];
+    // SYSTEM ENGINES
+    let masterQuestions = [], sessionPool = [];
+    const keyMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
 
     function initQuestions() {
         const lines = rawData.trim().split('\n');
         masterQuestions = lines.map(line => {
             const parts = line.split('|').map(p => p.trim());
             if (parts.length < 6) return null;
-            // Map Answer Key (A=0, B=1, C=2, D=3)
-            const keyMap = { 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
-            return {
-                q: parts[0],
-                o: [parts[1], parts[2], parts[3], parts[4]],
-                a: keyMap[parts[5]]
-            };
+            return { q: parts[0], o: [parts[1], parts[2], parts[3], parts[4]], a: keyMap[parts[5]] };
         }).filter(q => q !== null);
         refreshPool();
     }
 
-    function refreshPool() {
-        sessionPool = [...masterQuestions].sort(() => Math.random() - 0.5);
-    }
+    function refreshPool() { sessionPool = [...masterQuestions].sort(() => Math.random() - 0.5); }
 
-    // GAME ENGINE
     const AU = new (window.AudioContext || window.webkitAudioContext)();
     function sfx(f, t, type='square', v=0.04) {
         try {
@@ -348,17 +367,19 @@
     const gctx = gCanvas.getContext('2d');
     const bctx = bCanvas.getContext('2d');
 
-    let state = 'MENU', lives = 3, sector = 1, cameraX = 0, username = "";
-    let loopID;
-    const player = { x: 100, y: 0, w: 28, h: 28, dx: 0, dy: 0, speed: 6.5, gravity: 0.6, jPower: -11.5, grounded: false, canDJ: true };
-    let platforms = [], spikes = [], goal = { x: 0 };
+    let state = 'MENU', lives = 3, sector = 1, cameraX = 0, username = "", chpRot = 0;
+    let loopID, best = localStorage.getItem('bs_best') || 1;
+    
+    const player = { x: 100, y: 0, w: 30, h: 30, dx: 0, dy: 0, speed: 7, gravity: 0.65, jPower: -12.5, grounded: false, canDJ: true, trail: [] };
+    let platforms = [], spikes = [], checkpoints = [], goal = { x: 0 }, lastCheck = { x: 100, y: 0 };
     const keys = { left: false, right: false };
 
-    function resize() { 
-        gCanvas.width = bCanvas.width = window.innerWidth; 
-        gCanvas.height = bCanvas.height = window.innerHeight; 
-        drawStars(); 
+    function toggleFS() {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
     }
+
+    function resize() { gCanvas.width = bCanvas.width = window.innerWidth; gCanvas.height = bCanvas.height = window.innerHeight; drawStars(); }
     window.onresize = resize; resize();
 
     function jump() {
@@ -375,43 +396,55 @@
 
     function drawStars() {
         bctx.fillStyle = '#000'; bctx.fillRect(0,0,bCanvas.width, bCanvas.height);
-        for(let i=0; i<80; i++) {
+        for(let i=0; i<150; i++) {
             bctx.fillStyle = `rgba(255,255,255,${Math.random()})`;
             bctx.beginPath(); bctx.arc(Math.random()*bCanvas.width, Math.random()*bCanvas.height, 1, 0, Math.PI*2); bctx.fill();
         }
     }
 
     function generateLevel() {
-        spikes = [];
-        platforms = [{ x: 0, y: gCanvas.height-80, w: 500, h: 80 }];
+        spikes = []; checkpoints = [];
+        platforms = [{ x: 0, y: gCanvas.height-100, w: 500, h: 100 }];
         let curX = 500;
-        for(let i=0; i<25; i++) {
-            let gap = 130 + Math.random()*80;
-            let width = 140 + Math.random()*150;
-            let y = (gCanvas.height-140) - (Math.random()*200);
-            if(y < 120) y = 120;
-            platforms.push({ x: curX+gap, y: y, w: width, h: 30 });
-            if(Math.random() < 0.4 && i > 1) spikes.push({ x: curX+gap + (width/2) - 12, y: y - 20, w: 24, h: 20 });
+        for(let i=0; i<30; i++) {
+            let gap = 140 + Math.random()*100;
+            let width = 150 + Math.random()*180;
+            let y = (gCanvas.height-140) - (Math.random()*220);
+            if(y < 150) y = 150;
+            const p = { x: curX+gap, y: y, w: width, h: 35 };
+            platforms.push(p);
+            if(i % 6 === 0 && i !== 0) checkpoints.push({ x: p.x + width/2, y: p.y - 40, active: false });
+            else if(Math.random() < 0.5 && i > 1) spikes.push({ x: p.x + width/2 - 12, y: p.y - 20, w: 24, h: 20 });
             curX += gap + width;
         }
         goal = { x: curX + 150 };
-        player.x = 100; player.y = gCanvas.height-200;
+        player.x = lastCheck.x; player.y = lastCheck.y - 50;
     }
 
     function loop() {
         if(state !== 'PLAYING') return;
+        chpRot += 0.05;
         if(keys.left) player.dx = -player.speed; else if(keys.right) player.dx = player.speed; else player.dx *= 0.8;
         player.dy += player.gravity; player.x += player.dx; player.y += player.dy;
+        
+        player.trail.push({x: player.x, y: player.y}); if(player.trail.length > 8) player.trail.shift();
+        
         player.grounded = false;
         platforms.forEach(p => {
             if(player.x < p.x + p.w && player.x + player.w > p.x && player.y + player.h > p.y && player.y + player.h < p.y + p.h + 10) {
                 if(player.dy > 0) { player.y = p.y - player.h; player.dy = 0; player.grounded = true; player.canDJ = true; }
             }
         });
+        checkpoints.forEach(c => {
+            if(!c.active && Math.hypot(player.x + 15 - c.x, player.y + 15 - c.y) < 40) {
+                c.active = true; lastCheck = { x: c.x, y: c.y }; sfx(800, 0.2, 'sine');
+            }
+        });
         spikes.forEach(s => { if(player.x < s.x + s.w - 5 && player.x + player.w > s.x + 5 && player.y < s.y + s.h && player.y + player.h > s.y + 5) handleHit(); });
         if(player.y > gCanvas.height + 100) handleHit();
         if(player.x > goal.x) triggerQuiz();
-        cameraX += ((player.x - gCanvas.width/4) - cameraX) * 0.1;
+        
+        cameraX += ((player.x - gCanvas.width/3) - cameraX) * 0.1;
         if(cameraX < 0) cameraX = 0;
         render();
         loopID = requestAnimationFrame(loop);
@@ -421,15 +454,27 @@
         gctx.clearRect(0,0, gCanvas.width, gCanvas.height);
         gctx.save(); gctx.translate(-cameraX, 0);
         gctx.fillStyle = '#161b22'; platforms.forEach(p => gctx.fillRect(p.x, p.y, p.w, p.h));
+        
+        checkpoints.forEach(c => {
+            gctx.save(); gctx.translate(c.x, c.y); gctx.rotate(chpRot);
+            gctx.strokeStyle = c.active ? '#00ff88' : '#444'; gctx.lineWidth = 2;
+            gctx.beginPath(); gctx.moveTo(0, -15); gctx.lineTo(12, 10); gctx.lineTo(-12, 10); gctx.closePath(); gctx.stroke();
+            gctx.restore();
+        });
+
         gctx.fillStyle = '#ff4d4d'; spikes.forEach(s => { gctx.beginPath(); gctx.moveTo(s.x, s.y+s.h); gctx.lineTo(s.x+s.w/2, s.y); gctx.lineTo(s.x+s.w, s.y+s.h); gctx.fill(); });
         gctx.fillStyle = '#00f2ff'; gctx.fillRect(goal.x, 0, 4, gCanvas.height);
+        
+        player.trail.forEach((t, i) => { gctx.globalAlpha = i/10; gctx.fillRect(t.x, t.y, player.w, player.h); });
+        gctx.globalAlpha = 1; gctx.shadowBlur = 10; gctx.shadowColor = '#00f2ff';
         gctx.fillRect(player.x, player.y, player.w, player.h);
         gctx.restore();
     }
 
     function handleHit() {
         sfx(80, 0.2, 'sawtooth'); lives--; updateHUD();
-        if(lives <= 0) startGame(); else { player.x = 100; player.y = gCanvas.height-200; player.dx = player.dy = 0; }
+        if(lives <= 0) { lastCheck = { x: 100, y: gCanvas.height-200 }; startGame(); }
+        else { player.x = lastCheck.x; player.y = lastCheck.y - 50; player.dx = player.dy = 0; }
     }
 
     function startGame() {
@@ -445,18 +490,15 @@
     function triggerQuiz() {
         cancelAnimationFrame(loopID);
         state = 'QUIZ'; showScreen('quiz-screen');
-        
-        if(sessionPool.length === 0) refreshPool();
-        const q = sessionPool.pop(); // Pulls unique question
-        
+        const q = sessionPool.pop();
         document.getElementById('q-text').innerText = q.q;
         const box = document.getElementById('opt-box'); box.innerHTML = '';
         q.o.forEach((opt, i) => {
-            if(!opt) return;
             const b = document.createElement('button'); b.className = 'opt-btn'; b.innerText = opt;
             b.onclick = () => {
                 if(i === q.a) { 
                     sfx(1200, 0.2); sector++; 
+                    if(sector > best) { best = sector; localStorage.setItem('bs_best', best); }
                     showScreen(null); state = 'PLAYING'; generateLevel(); updateHUD(); loop();
                 } else { sfx(50, 0.4, 'sawtooth'); startGame(); }
             };
@@ -476,9 +518,10 @@
         document.getElementById('ui-layer').style.pointerEvents = id ? 'auto' : 'none'; 
     }
 
+    function toggleQR(s) { document.getElementById('qr-modal').classList.toggle('active', s); }
+
     initQuestions();
-    let best = localStorage.getItem('bs_best') || 1;
-    document.getElementById('hs-text').innerText = `RECORD: SECTOR ${best}`;
+    document.getElementById('hs-text').innerText = `BEST RECORD: SECTOR ${best}`;
 </script>
 </body>
 </html>
