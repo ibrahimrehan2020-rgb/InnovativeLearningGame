@@ -16,7 +16,6 @@
             --success: #00ff88;
             --platform: #161b22;
             --platform-border: #30363d;
-            --gold: #ffcc00;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Roboto, sans-serif; user-select: none; }
@@ -33,8 +32,8 @@
         .screen.active { display: flex; animation: slideIn 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
 
         @keyframes slideIn {
-            from { transform: translateY(30px); opacity: 0; box-shadow: 0 0 0px var(--cyan-dim); }
-            to { transform: translateY(0); opacity: 1; box-shadow: 0 10px 50px rgba(0,0,0,0.9); }
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         h1 { color: var(--cyan); text-align: center; letter-spacing: 4px; text-shadow: 0 0 15px var(--cyan-glow); font-size: 2.5rem; margin-bottom: 5px; }
@@ -44,9 +43,20 @@
         .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 20px var(--cyan-glow); }
         .btn-secondary { background: transparent; border: 2px solid var(--platform-border); color: var(--text); padding: 12px; }
 
+        /* RESPONSIVE QR SYSTEM */
         #qr-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 200; justify-content: center; align-items: center; flex-direction: column; gap: 30px; pointer-events: auto;}
         #qr-modal.active { display: flex; }
-        #qr-container { width: 350px; height: 350px; border: 2px dashed var(--cyan-dim); border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: var(--cyan); font-weight: bold; }
+        
+        .qr-frame { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 0 40px var(--cyan-glow); transition: 0.3s; }
+        
+        /* Mobile Default */
+        .qr-frame img { display: block; width: 250px; height: 250px; }
+
+        /* Desktop Adjustment */
+        @media (min-width: 1024px) {
+            .qr-frame img { width: 500px; height: 500px; }
+            .qr-frame { padding: 25px; }
+        }
 
         #hud { position: absolute; top: 20px; left: 20px; right: 20px; display: none; justify-content: space-between; font-weight: bold; z-index: 10; pointer-events: none; }
         #hud span { background: var(--card-bg); padding: 10px 20px; border-radius: 8px; border: 1px solid var(--platform-border); }
@@ -106,17 +116,15 @@
     </div>
 
     <div id="quiz-screen" class="screen">
-        <h2 style="color: var(--cyan); text-align: center; text-transform: uppercase;">Incoming Data...</h2>
+        <h2 style="color: var(--cyan); text-align: center;">TERMINAL ACCESS</h2>
         <p id="q-text" style="text-align: center; margin: 15px 0; font-size: 1.3rem; border-left: 4px solid var(--cyan); padding-left: 10px;"></p>
         <div id="opt-box"></div>
     </div>
 </div>
 
 <div id="qr-modal">
-    <div id="qr-container">
-        <p style="margin-bottom: 20px;">LINK DETECTED:</p>
-        <p style="font-size: 0.8rem; word-break: break-all; opacity: 0.6;">https://ibrahimrehan2020-rgb.github.io/InnovativeLearningGame/</p>
-        <div style="width:200px; height:200px; background: white; margin-top:20px; padding:10px;"><div style="width:100%; height:100%; background:repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50% / 20px 20px;"></div></div>
+    <div class="qr-frame">
+        <img src="https://storage3.me-qr.com/qr/343222737.png?v=1777820178" alt="Game QR Code">
     </div>
     <button class="btn" style="max-width: 200px;" onclick="toggleQR(false)">Back</button>
 </div>
@@ -153,7 +161,7 @@
 
     const player = { x: 100, y: 0, w: 32, h: 32, dx: 0, dy: 0, speed: 7.5, gravity: 0.65, jPower: -13, grounded: false, canDJ: true, trail: [], lastFace: 1 };
     let platforms = [], spikes = [], checkpoints = [], goal = { x: 0, y: 0 };
-    let lastCheck = { x: 100, y: gCanvas.height-250 };
+    let lastCheck = { x: 100, y: 0 };
     const keys = { left: false, right: false };
 
     function toggleFS() {
@@ -202,7 +210,6 @@
             if(y < 150) y = 150;
             const plat = { x: curX+gap, y: y, w: width, h: 40 };
             platforms.push(plat);
-
             if(i % 6 === 0 && i !== 0) checkpoints.push({ x: plat.x + plat.w/2, y: plat.y - 50, active: false });
             else if(Math.random() < 0.6 && i > 1) {
                 spikes.push({ x: plat.x + (plat.w/2) - 13, y: plat.y - 22, w: 26, h: 22 });
@@ -218,31 +225,22 @@
         checkpointRotation += 0.05;
         if(keys.left) player.dx = -player.speed; else if(keys.right) player.dx = player.speed; else player.dx *= 0.82;
         player.dy += player.gravity; player.x += player.dx; player.y += player.dy;
-
         player.trail.push({x: player.x, y: player.y}); if(player.trail.length > 12) player.trail.shift();
         player.grounded = false;
-
         platforms.forEach(p => {
             if(player.x < p.x + p.w && player.x + player.w > p.x && player.y + player.h > p.y && player.y + player.h < p.y + p.h + 15) {
                 if(player.dy > 0) { player.y = p.y - player.h; player.dy = 0; player.grounded = true; player.canDJ = true; }
             }
         });
-
         checkpoints.forEach(c => {
             let dist = Math.hypot(player.x + 16 - c.x, player.y + 16 - c.y);
             if(!c.active && dist < 40) { c.active = true; lastCheck = { x: c.x - 16, y: c.y - 16 }; sfx(900, 0.3, 'sine'); }
         });
-
-        spikes.forEach(s => {
-            if(player.x < s.x + s.w - 5 && player.x + player.w > s.x + 5 && player.y < s.y + s.h && player.y + player.h > s.y + 5) handleHit();
-        });
-
+        spikes.forEach(s => { if(player.x < s.x + s.w - 5 && player.x + player.w > s.x + 5 && player.y < s.y + s.h && player.y + player.h > s.y + 5) handleHit(); });
         if(player.y > gCanvas.height + 200) handleHit();
         if(player.x > goal.x) triggerQuiz();
-
         cameraX += ((player.x - gCanvas.width/3) - cameraX) * 0.1;
         if(cameraX < 0) cameraX = 0;
-
         render();
         loopID = requestAnimationFrame(loop);
     }
@@ -250,9 +248,7 @@
     function render() {
         gctx.clearRect(0,0, gCanvas.width, gCanvas.height);
         gctx.save(); gctx.translate(-cameraX, 0);
-
         platforms.forEach(p => { gctx.fillStyle = '#161b22'; gctx.fillRect(p.x, p.y, p.w, p.h); gctx.strokeStyle = '#30363d'; gctx.strokeRect(p.x, p.y, p.w, p.h); });
-        
         checkpoints.forEach(c => {
             gctx.save(); gctx.translate(c.x, c.y); gctx.rotate(checkpointRotation);
             gctx.shadowBlur = 20; gctx.shadowColor = c.active ? '#00ff88' : '#333';
@@ -261,11 +257,8 @@
             if(c.active) { gctx.fillStyle = 'rgba(0,255,136,0.3)'; gctx.fill(); }
             gctx.restore();
         });
-
         spikes.forEach(s => { gctx.fillStyle = '#ff4d4d'; gctx.beginPath(); gctx.moveTo(s.x, s.y+s.h); gctx.lineTo(s.x+s.w/2, s.y); gctx.lineTo(s.x+s.w, s.y+s.h); gctx.fill(); });
-
         gctx.fillStyle = '#00f2ff'; gctx.fillRect(goal.x, goal.y-150, 5, 150);
-
         player.trail.forEach((t, i) => { gctx.globalAlpha = i/15; gctx.fillStyle = '#00f2ff'; gctx.fillRect(t.x, t.y, player.w, player.h); });
         gctx.globalAlpha = 1; gctx.fillStyle = '#00f2ff'; gctx.shadowBlur = 15; gctx.shadowColor = '#00f2ff';
         gctx.fillRect(player.x, player.y, player.w, player.h);
@@ -281,7 +274,7 @@
     }
 
     function startGame() {
-        cancelAnimationFrame(loopID); // Prevent double-speed bug
+        cancelAnimationFrame(loopID);
         AU.resume();
         username = document.getElementById('username').value.trim() || "REHAN";
         lives = 3; sector = 1; lastCheck = { x: 100, y: gCanvas.height-250 };
@@ -290,7 +283,7 @@
     }
 
     function triggerQuiz() {
-        cancelAnimationFrame(loopID); 
+        cancelAnimationFrame(loopID);
         state = 'QUIZ'; showScreen('quiz-screen');
         const q = questions[Math.floor(Math.random()*questions.length)];
         document.getElementById('q-text').innerText = q.q;
